@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Australia &amp; The Mexican — Sydney to Byron Bay Road Trip</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=DM+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0
+    }
+
+    :root {
+      --bg-dark: #131211;
+      --bg-body: #1a1917;
+      --card-bg: #242220;
+      --card-border: #2e2b28;
+      --amber: #e8833a;
+      --amber-glow: #e8833a44;
+      --amber-light: #f4a261;
+      --sage: #7a8c6e;
+      --sage-muted: #5a6b50;
+      --text: #f5f0e8;
+      --text-muted: #a89f94;
+      --text-dim: #6b6560;
+      --font-display: 'Oswald', sans-serif;
+      --font-body: 'DM Sans', sans-serif;
+    }
+
+    html {
+      scroll-behavior: smooth
+    }
+
+    body {
+      font-family: var(--font-body);
+      background: var(--bg-body);
+      color: var(--text);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── HERO ── */
+    .hero {
+      position: relative;
+      padding: 3rem 1.5rem 1.5rem;
+      text-align: center;
+      background: linear-gradient(180deg, var(--bg-dark) 0%, var(--bg-body) 100%);
+      border-bottom: 1px solid var(--card-border);
+    }
+
+    .hero-label {
+      font-family: var(--font-display);
+      font-size: .75rem;
+      letter-spacing: .3em;
+      text-transform: uppercase;
+      color: var(--amber);
+      margin-bottom: .5rem;
+    }
+
+    .hero h1 {
+      font-family: var(--font-display);
+      font-size: clamp(2rem, 6vw, 3.8rem);
+      font-weight: 700;
+      text-transform: uppercase;
+      line-height: 1.05;
+      color: var(--text);
+      margin-bottom: .5rem;
+    }
+
+    .hero h1 span {
+      color: var(--amber)
+    }
+
+    .hero-sub {
+      font-size: 1rem;
+      color: var(--text-muted);
+      max-width: 480px;
+      margin: 0 auto;
+    }
+
+    .hero-stats {
+      display: flex;
+      justify-content: center;
+      gap: 2rem;
+      margin-top: 1.5rem;
+      flex-wrap: wrap;
+    }
+
+    .hero-stat {
+      text-align: center
+    }
+
+    .hero-stat .num {
+      font-family: var(--font-display);
+      font-size: 1.8rem;
+      font-weight: 600;
+      color: var(--amber);
+      line-height: 1;
+    }
+
+    .hero-stat .label {
+      font-size: .7rem;
+      text-transform: uppercase;
+      letter-spacing: .15em;
+      color: var(--text-dim);
+      margin-top: .15rem;
+    }
+
+    /* ── MAP ── */
+    .map-wrapper {
+      position: relative;
+      border-bottom: 3px solid var(--amber);
+    }
+
+    #map {
+      width: 100%;
+      height: 60vh;
+      min-height: 350px;
+      z-index: 1;
+    }
+
+    .leaflet-tile-pane {
+      filter: saturate(.3) brightness(.85) contrast(1.1)
+    }
+
+    .leaflet-control-attribution {
+      font-size: 10px !important;
+      background: rgba(0, 0, 0, .6) !important;
+      color: #888 !important
+    }
+
+    .leaflet-control-attribution a {
+      color: var(--amber) !important
+    }
+
+    .marker-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: var(--amber);
+      color: #fff;
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 14px;
+      box-shadow: 0 0 0 4px var(--amber-glow), 0 2px 8px rgba(0, 0, 0, .5);
+      cursor: pointer;
+      transition: transform .2s;
+      animation: pulse 3s ease-in-out infinite;
+    }
+
+    .marker-icon:hover {
+      transform: scale(1.2)
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        box-shadow: 0 0 0 4px var(--amber-glow), 0 2px 8px rgba(0, 0, 0, .5)
+      }
+
+      50% {
+        box-shadow: 0 0 0 10px transparent, 0 2px 8px rgba(0, 0, 0, .5)
+      }
+    }
+
+    /* ── ITINERARY ── */
+    .itinerary {
+      max-width: 880px;
+      margin: 0 auto;
+      padding: 2.5rem 1.5rem 4rem;
+    }
+
+    .itinerary-header {
+      text-align: center;
+      margin-bottom: 2.5rem;
+    }
+
+    .itinerary-header h2 {
+      font-family: var(--font-display);
+      font-size: 1.6rem;
+      text-transform: uppercase;
+      letter-spacing: .12em;
+      color: var(--text);
+    }
+
+    .itinerary-header p {
+      color: var(--text-muted);
+      margin-top: .4rem;
+      font-size: .9rem;
+    }
+
+    /* ── DAY CARD ── */
+    .day-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 2rem 2rem 1.8rem;
+      margin-bottom: 1.5rem;
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity .6s ease, transform .6s ease, box-shadow .3s ease;
+    }
+
+    .day-card.visible {
+      opacity: 1;
+      transform: translateY(0)
+    }
+
+    .day-card.highlighted {
+      box-shadow: 0 0 0 2px var(--amber), 0 0 30px var(--amber-glow);
+    }
+
+    .day-top {
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+      margin-bottom: 1.2rem;
+      flex-wrap: wrap;
+    }
+
+    .day-num {
+      flex-shrink: 0;
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: var(--amber);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 1.1rem;
+      color: #fff;
+    }
+
+    .day-meta {
+      flex: 1;
+      min-width: 200px
+    }
+
+    .day-meta h3 {
+      font-family: var(--font-display);
+      font-size: 1.35rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      line-height: 1.15;
+      color: var(--text);
+    }
+
+    .day-route {
+      font-size: .8rem;
+      color: var(--text-muted);
+      margin-top: .2rem;
+    }
+
+    .day-drive {
+      display: inline-flex;
+      align-items: center;
+      gap: .4rem;
+      background: var(--bg-dark);
+      border: 1px solid var(--card-border);
+      border-radius: 6px;
+      padding: .25rem .7rem;
+      font-size: .75rem;
+      color: var(--amber-light);
+      margin-top: .4rem;
+      font-weight: 500;
+    }
+
+    .day-desc {
+      color: var(--text-muted);
+      font-size: .92rem;
+      line-height: 1.65;
+      margin-bottom: 1.3rem;
+
+    }
+
+    .day-sections {
+      display: grid;
+      gap: 1.2rem;
+    }
+
+    .day-section h4 {
+      font-family: var(--font-display);
+      font-size: .8rem;
+      text-transform: uppercase;
+      letter-spacing: .15em;
+      margin-bottom: .5rem;
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+    }
+
+    .day-section h4 .icon {
+      font-style: normal;
+      font-size: 1rem
+    }
+
+    .section-camp h4 {
+      color: var(--sage)
+    }
+
+    .section-eat h4 {
+      color: var(--amber-light)
+    }
+
+    .section-do h4 {
+      color: var(--text)
+    }
+
+    .camp-box {
+      background: var(--bg-dark);
+      border: 1px solid var(--sage-muted);
+      border-radius: 8px;
+      padding: .8rem 1rem;
+    }
+
+    .camp-name {
+      font-weight: 600;
+      color: var(--sage);
+      font-size: .9rem;
+    }
+
+    .camp-detail {
+      font-size: .8rem;
+      color: var(--text-muted);
+      margin-top: .2rem;
+      line-height: 1.5;
+    }
+
+    .eat-list,
+    .do-list {
+      list-style: none;
+      padding: 0;
+    }
+
+    .eat-list li,
+    .do-list li {
+      font-size: .88rem;
+      color: var(--text-muted);
+      padding: .25rem 0;
+      padding-left: 1.2rem;
+      position: relative;
+    }
+
+    .eat-list li::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: .65rem;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--amber);
+    }
+
+    .do-list li::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: .65rem;
+      width: 6px;
+      height: 6px;
+      border-radius: 2px;
+      background: var(--sage);
+    }
+
+    /* ── FOOTER ── */
+    .site-footer {
+      text-align: center;
+      padding: 2rem 1.5rem 3rem;
+      border-top: 1px solid var(--card-border);
+      color: var(--text-dim);
+      font-size: .75rem;
+    }
+
+    /* ── RESPONSIVE ── */
+    @media(max-width:640px) {
+      .hero {
+        padding: 2rem 1rem 1rem
+      }
+
+      .hero h1 {
+        font-size: 1.8rem
+      }
+
+      .hero-stats {
+        gap: 1.2rem
+      }
+
+      #map {
+        height: 45vh;
+        min-height: 280px
+      }
+
+      .itinerary {
+        padding: 1.5rem 1rem 3rem
+      }
+
+      .day-card {
+        padding: 1.4rem 1.2rem 1.3rem
+      }
+
+      .day-num {
+        width: 40px;
+        height: 40px;
+        font-size: .95rem
+      }
+
+      .day-meta h3 {
+        font-size: 1.1rem
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <header class="hero">
+    <div class="hero-label">8 Days &middot; 2 People &middot; 1 RV</div>
+    <h1>Sydney <span>&rarr;</span> Byron Bay <span>&rarr;</span> Sydney</h1>
+    <p class="hero-sub">Leave Sydney 2:30pm; return by 11am. Coast via Port Stephens, Coffs/Sawtell; Hunter Valley last for vineyards + Singleton; rest day in Byron.</p>
+    <div class="hero-stats">
+      <div class="hero-stat">
+        <div class="num">8</div>
+        <div class="label">Days</div>
+      </div>
+      <div class="hero-stat">
+        <div class="num">~1,760</div>
+        <div class="label">Total km</div>
+      </div>
+      <div class="hero-stat">
+        <div class="num">7</div>
+        <div class="label">Stops</div>
+      </div>
+      <div class="hero-stat">
+        <div class="num">7</div>
+        <div class="label">Campsites</div>
+      </div>
+    </div>
+  </header>
+
+  <div class="map-wrapper">
+    <div id="map"></div>
+  </div>
+
+  <section class="itinerary" id="itinerary"></section>
+
+  <footer class="site-footer">
+    The Australia &amp; The Mexican &mdash; Roadtrip Planner &middot; Built with Leaflet &amp; OpenStreetMap
+  </footer>
+
+  <script>
+    const STOPS = [
+      {
+        day: 1,
+        title: "Sydney to Port Stephens",
+        route: "Via Pacific Motorway / M1 to Nelson Bay",
+        km: "~200 km",
+        time: "~2.5 hrs",
+        coords: [-32.7200, 152.1500],
+        desc: "Leave Sydney 2:30pm. Drive north to Port Stephens (Nelson Bay). Arrive ~5pm. Tomaree Head, Stockton Sand Dunes and dolphin cruises are nearby. Short first afternoon keeps the day relaxed.",
+        campsite: {
+          name: "BIG4 Bays Holiday Park",
+          detail: "Port Stephens. Powered grass sites for caravans & motorhomes. Pool, games room, camp kitchen. Pet-friendly in off-peak. Close to Nelson Bay marina."
+        },
+        eat: ["Still to do \u2014 no recommendations yet"],
+        activities: [
+          "Tomaree Head Summit Walk \u2014 short steep climb with panoramic views",
+          "Stockton Sand Dunes \u2014 largest moving sand dunes in the southern hemisphere",
+          "Dolphin-watching cruises from Nelson Bay marina"
+        ],
+      },
+      {
+        day: 2,
+        title: "Port Stephens to Coffs Harbour / Sawtell",
+        route: "Via Pacific Highway through Port Macquarie, Kempsey to Coffs",
+        km: "~372 km",
+        time: "~3.5 hrs",
+        coords: [-30.2986, 153.1094],
+        desc: "Longer drive from Port Stephens to the Coffs Harbour area. Sawtell is 15 min south of Coffs \u2014 village beach vibe, good cafes and beach. Coffs has the Big Banana, beaches and hinterland. Base in either or split time.",
+        campsite: {
+          name: "BIG4 Park Beach Holiday Park (Coffs) / Coffs Coast Holiday Parks",
+          detail: "Coffs Harbour: resort pool, mini golf, beach opposite. Sawtell: BIG4 Sawtell Beach \u2014 waterfront, 15 min south of Coffs. Both have powered sites and full facilities."
+        },
+        eat: ["Still to do \u2014 no recommendations yet"],
+        activities: [
+          "Sawtell \u2014 main beach, Boambee Creek, cafes and relaxed vibe",
+          "Coffs Harbour \u2014 Big Banana, Muttonbird Island, Coffs Creek",
+          "Bongil Bongil NP \u2014 rainforest walks south of Coffs"
+        ],
+      },
+      {
+        day: 3,
+        title: "Coffs Harbour / Sawtell to Byron Bay",
+        route: "Via Pacific Highway north to Byron",
+        km: "~238 km",
+        time: "~2.5 hrs",
+        coords: [-28.6437, 153.6120],
+        desc: "Continue north to Byron Bay. Cape Byron Lighthouse is walkable from town. Good range of restaurants and beaches in the centre.",
+        campsite: {
+          name: "Reflections Holiday Parks Byron Bay",
+          detail: "Standard powered sites for rigs up to 9m. Power, water & sullage. Walking distance to Clarkes Beach and town. Camp kitchen, BBQ & playground."
+        },
+        eat: ["Bar Heather \u2014 natural wine, seasonal small plates & live music"],
+        activities: [
+          "Lake Ainsworth, Lennox Head \u2014 tea-tree stained lake, quick stop before Byron",
+          "Cape Byron Lighthouse walk \u2014 Australia\u2019s most easterly point",
+          "Broadsheet: \u201824 Hours in Byron Bay\u2019 for local tips"
+        ],
+      },
+      {
+        day: 4,
+        title: "Byron Bay Rest Day",
+        route: "Day trips to Bangalow, Brunswick Heads & Eltham",
+        km: "~50 km",
+        time: "Day trips",
+        coords: [-28.6437, 153.6120],
+        desc: "Rest day based in Byron. Bangalow 15 min inland for brunch and shopping. Brunswick Heads 15 min north for river swim. Eltham for a quiet hinterland pub.",
+        campsite: {
+          name: "Reflections Holiday Parks Byron Bay",
+          detail: "Same site as Day 3. Leave the RV plugged in and explore by car or bike."
+        },
+        eat: [
+          "You Beauty, Bangalow \u2014 corner bar & dining by chef Matt Stone (hatted, Wed\u2013Sun)",
+          "Hotel Brunswick \u2014 Three Blue Ducks pub dining, riverside beer garden",
+          "Eltham Hotel \u2014 country pub lunch, valley views, 12 craft taps"
+        ],
+        activities: [
+          "Hotel Brunswick live music \u2014 Sunday Brunsday free gigs from 4pm"
+        ],
+      },
+      {
+        day: 5,
+        title: "Byron Bay to Yamba",
+        route: "South via Pacific Highway to the Clarence River",
+        km: "~130 km",
+        time: "~1.5 hrs",
+        coords: [-29.4353, 153.3572],
+        desc: "Short drive south to Yamba. Angourie has surf and the Blue Pool. Town centre has pubs and restaurants within walking distance of the holiday park.",
+        campsite: {
+          name: "Calypso Yamba Holiday Park",
+          detail: "Central on the Clarence River. Powered sites, walk to town & beaches. Laundry, camp kitchen & dump point."
+        },
+        eat: [
+          "Pacific Hotel \u2014 iconic Yamba pub, ocean views & live entertainment",
+          "Paradiso \u2014 modern Asian-fusion (book ahead, cash only)",
+          "Playa Bodega \u2014 Yamba King Prawn tacos (book ahead)",
+          "The Kiosk \u2014 beachside breakfast & coffee on Main Beach"
+        ],
+        activities: [
+          "Pipi Beach north end \u2014 uncrowded sand",
+          "Angourie back beach \u2014 wild, great for bodysurfing"
+        ],
+      },
+      {
+        day: 6,
+        title: "Yamba to Port Macquarie",
+        route: "South via Pacific Highway",
+        km: "~300 km",
+        time: "~3.5 hrs",
+        coords: [-31.4333, 152.9000],
+        desc: "Longer drive south to Port Macquarie. Koala Hospital offers free guided tours. Tacking Point Lighthouse and Sea Acres Rainforest Centre are nearby.",
+        campsite: {
+          name: "NRMA Port Macquarie Breakwall Holiday Park",
+          detail: "1 Munster St, Port Macquarie. Powered & ensuite sites. Pool, games room, camp kitchen. Rated 9.0/10. Walk to town via breakwall boardwalk."
+        },
+        altCampsites: [
+          {
+            name: "Diamond Head Campground \u2014 Crowdy Bay National Park",
+            detail: "~30 min south via Laurieton (Kew exit). 75 sites, beachside. Book via NSW National Parks."
+          }
+        ],
+        eat: ["Still to do \u2014 no recommendations yet"],
+        activities: ["Koala Hospital \u2014 free guided tours", "Tacking Point Lighthouse", "Sea Acres Rainforest Centre"],
+      },
+      {
+        day: 7,
+        title: "Port Macquarie to Hunter Valley",
+        route: "South via Pacific Motorway then inland to Cessnock / Pokolbin",
+        km: "~277 km",
+        time: "~3 hrs",
+        coords: [-32.7920, 151.2800],
+        desc: "Drive to Hunter Valley wine region. Arrive midday/early afternoon for a full afternoon in the vineyards and Singleton. Cellar doors and scenic drives.",
+        campsite: {
+          name: "Ingenia Holidays Hunter Valley",
+          detail: "137 Mount View Rd, Cessnock. Powered astroturf sites, pool, spa & BBQ. 10\u201315 min to Pokolbin wineries. Dump point on-site."
+        },
+        eat: [
+          "Tyrrell\u2019s Wines \u2014 cellar door, iconic Hunter Semillon",
+          "Margan \u2014 courtyard tastings, sustainable vineyard dining"
+        ],
+        activities: [
+          "Pokolbin cellar doors \u2014 Semillon, Shiraz, afternoon tastings",
+          "Singleton \u2014 town visit, heritage, cafes",
+          "Scenic drives through vineyard country"
+        ],
+      },
+      {
+        day: 8,
+        title: "Hunter Valley to Sydney",
+        route: "South via Pacific Motorway, home",
+        km: "~200 km",
+        time: "~2.5 hrs",
+        coords: [-33.8688, 151.2093],
+        desc: "Leave by ~8am to reach Sydney by 11am. Final stretch via M1. Allow buffer for traffic.",
+        campsite: null,
+        eat: ["Still to do \u2014 no recommendations yet"],
+        activities: ["Morning pack-up, then drive home"],
+      }
+    ];
+
+    // ── MAP INIT ──
+    const map = L.map('map', {
+      scrollWheelZoom: true,
+      zoomControl: true
+    });
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+      maxZoom: 18
+    }).addTo(map);
+
+    const routeCoords = [
+      [-33.8688, 151.2093],
+      [-32.7200, 152.1500],
+      [-30.2986, 153.1094],
+      [-28.6437, 153.6120],
+      [-29.4353, 153.3572],
+      [-31.4333, 152.9000],
+      [-32.7920, 151.2800],
+      [-33.8688, 151.2093]
+    ];
+
+    L.polyline(routeCoords, {
+      color: '#e8833a',
+      weight: 3,
+      opacity: 0.7,
+      dashArray: '10 8',
+      lineJoin: 'round'
+    }).addTo(map);
+
+    const uniqueStops = [
+      { coords: [-33.8688, 151.2093], label: 'Start', day: 0 },
+      ...STOPS.filter((s, i, arr) => {
+        if (i === 0) return true;
+        return !(s.coords[0] === arr[i - 1].coords[0] && s.coords[1] === arr[i - 1].coords[1]);
+      })
+    ];
+
+    const markerGroup = L.featureGroup();
+
+    function createMarkerIcon(text) {
+      return L.divIcon({
+        className: '',
+        html: '<div class="marker-icon">' + text + '</div>',
+        iconSize: [34, 34],
+        iconAnchor: [17, 17]
+      });
+    }
+
+    const startMarker = L.marker([-33.8688, 151.2093], {
+      icon: createMarkerIcon('S')
+    }).addTo(map);
+    startMarker.bindPopup('<strong>Sydney</strong><br>Start &amp; Finish');
+    markerGroup.addLayer(startMarker);
+
+    STOPS.forEach((stop, idx) => {
+      if (idx === 3) return; // Day 4 Byron rest shares marker with Day 3
+      if (idx === 7) return; // Day 8 shares Sydney marker with start
+
+      const marker = L.marker(stop.coords, {
+        icon: createMarkerIcon(stop.day)
+      }).addTo(map);
+
+      marker.bindPopup('<strong>Day ' + stop.day + '</strong><br>' + stop.title);
+
+      marker.on('click', function () {
+        const card = document.getElementById('day-' + stop.day);
+        if (card) {
+          card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          card.classList.add('highlighted');
+          setTimeout(() => card.classList.remove('highlighted'), 2000);
+        }
+      });
+
+      markerGroup.addLayer(marker);
+    });
+
+    map.fitBounds(markerGroup.getBounds().pad(0.08));
+
+    // ── RENDER CARDS ──
+    const itinerary = document.getElementById('itinerary');
+    itinerary.innerHTML = '<div class="itinerary-header"><h2>The Itinerary</h2><p>Day-by-day route, stops, campsites & recommendations</p></div>';
+
+    STOPS.forEach(function (stop) {
+      const card = document.createElement('div');
+      card.className = 'day-card';
+      card.id = 'day-' + stop.day;
+
+      let html = '';
+      html += '<div class="day-top">';
+      html += '<div class="day-num">' + stop.day + '</div>';
+      html += '<div class="day-meta">';
+      html += '<h3>' + stop.title + '</h3>';
+      html += '<div class="day-route">' + stop.route + '</div>';
+      html += '<div class="day-drive">\u{1F697} ' + stop.km + ' &middot; ' + stop.time + '</div>';
+      html += '</div></div>';
+
+      html += '<p class="day-desc">' + stop.desc + '</p>';
+
+      html += '<div class="day-sections">';
+
+      if (stop.campsite) {
+        html += '<div class="day-section section-camp">';
+        html += '<h4><span class="icon">\u{1F3D5}\uFE0F</span> Where to Stay</h4>';
+        html += '<div class="camp-box">';
+        html += '<div class="camp-name">' + stop.campsite.name + '</div>';
+        html += '<div class="camp-detail">' + stop.campsite.detail + '</div>';
+        html += '</div>';
+        if (stop.altCampsites && stop.altCampsites.length > 0) {
+          html += '<h4 style="margin-top:.8rem"><span class="icon">\u{1F3D5}\uFE0F</span> Alternatives</h4>';
+          stop.altCampsites.forEach(function (alt) {
+            html += '<div class="camp-box" style="margin-top:.5rem">';
+            html += '<div class="camp-name">' + alt.name + '</div>';
+            html += '<div class="camp-detail">' + alt.detail + '</div>';
+            html += '</div>';
+          });
+        }
+        html += '</div>';
+      }
+
+      html += '<div class="day-section section-eat">';
+      html += '<h4><span class="icon">\u{1F37D}\uFE0F</span> Eat & Drink</h4>';
+      html += '<ul class="eat-list">';
+      stop.eat.forEach(function (e) { html += '<li>' + e + '</li>'; });
+      html += '</ul></div>';
+
+      html += '<div class="day-section section-do">';
+      html += '<h4><span class="icon">\u{1F30A}</span> Things to Do</h4>';
+      html += '<ul class="do-list">';
+      stop.activities.forEach(function (a) { html += '<li>' + a + '</li>'; });
+      html += '</ul></div>';
+
+      html += '</div>';
+
+      card.innerHTML = html;
+      itinerary.appendChild(card);
+    });
+
+    // ── SCROLL ANIMATIONS ──
+    const observer = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+        }
+      });
+    }, { threshold: 0.08 });
+
+    document.querySelectorAll('.day-card').forEach(function (card) {
+      observer.observe(card);
+    });
+  </script>
+</body>
+
+</html>
